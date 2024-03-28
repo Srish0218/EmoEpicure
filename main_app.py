@@ -14,7 +14,6 @@ from database import create_table, get_owner_by_username
 
 pd.set_option('mode.use_inf_as_na', True)
 
-
 ps = PorterStemmer()
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
@@ -29,7 +28,6 @@ classifier_file = 'c2_Classifier_Sentiment_Model'
 classifier = joblib.load(classifier_file)
 
 # Load English stopwords
-nltk.download('stopwords')
 all_stopwords = stopwords.words('english')
 all_stopwords.remove('not')  # Remove 'not' from stopwords
 
@@ -47,7 +45,6 @@ def analyze_sentiment(review):
 
     # Make prediction
     return classifier.predict(input_transformed)[0]
-
 
 # FUNCTION TO VISUALIZE RATING DISTRIBUTION USING LINE CHART
 def visualize_rating_distribution(df):
