@@ -2,7 +2,6 @@
 
 from database import get_owner_by_username
 
-
 def login(username, password):
     """
     Authenticate a user based on their username and password.
