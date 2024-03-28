@@ -9,6 +9,7 @@ import seaborn as sns
 import streamlit as st
 from nltk import PorterStemmer
 from nltk.corpus import stopwords
+from streamlit_extras.let_it_rain import rain
 
 from database import create_table, get_owner_by_username
 
@@ -36,9 +37,7 @@ all_stopwords.remove('not')  # Remove 'not' from stopwords
 
 # Function to preprocess and predict sentiment
 def analyze_sentiment(review):
-    review = re.sub('[^a-zA-Z]', ' ', review)
-    review = review.lower()
-    review = review.split()
+    review = re.sub('[^a-zA-Z]', ' ', review).lower().split()
     review = [ps.stem(word) for word in review if word not in set(all_stopwords)]
     review = ' '.join(review)
 
@@ -49,10 +48,10 @@ def analyze_sentiment(review):
     return classifier.predict(input_transformed)[0]
 
 
-# FUNCTION TO VISUALIZE RATING DISTRIBUTION USING LINE CHART
+# Function to visualize rating distribution using line chart
 def visualize_rating_distribution(df):
-    width1 = st.slider("Adjust Chart Width:", min_value=4, max_value=12, value=8)
-    height1 = st.slider("Adjust Chart Height:", min_value=4, max_value=12, value=6)
+    width1 = 8
+    height1 = 6
     fig, ax = plt.subplots(figsize=(width1, height1))
     sns.lineplot(x='Rating', y='Count', data=df.groupby('Rating').size().reset_index(name='Count'), ax=ax)
     plt.xlabel('Rating')
@@ -61,36 +60,50 @@ def visualize_rating_distribution(df):
     st.pyplot(fig)
 
 
-# Function to visualize sentiment distribution using pie charts
-def visualize_sentiment_distribution(df):
-    width_key = "chart_width2"
-    height_key = "chart_height2"
-    width2 = st.slider("Adjust Chart Width:", min_value=4, max_value=12, value=8, key=width_key)
-    height2 = st.slider("Adjust Chart Height:", min_value=4, max_value=12, value=6, key=height_key)
-    fig1, ax1 = plt.subplots(figsize=(width2, height2))
-    positive_count = df[df['Sentiment'] == 'Positive'].shape[0]
-    negative_count = df[df['Sentiment'] == 'Negative'].shape[0]
-    labels = ['Positive', 'Negative']
-    sizes = [positive_count, negative_count]
-    explode = (0.1, 0)  # explode 1st slice
-    ax1.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%', startangle=90)
-    ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
-    st.pyplot(fig1)
-
-
 # Function to visualize sentiment distribution using bar chart
 def visualize_sentiment_distribution_bar(df):
-    chart_width_key = "bar_chart_width"
-    chart_height_key = "bar_chart_height"
-    chart_width = st.slider("Adjust Chart Width:", min_value=4, max_value=12, value=8, key=chart_width_key)
-    chart_height = st.slider("Adjust Chart Height:", min_value=4, max_value=12, value=6, key=chart_height_key)
+    chart_width = 8
+    chart_height = 6
     fig, ax = plt.subplots(figsize=(chart_width, chart_height))
     sns.countplot(x='Sentiment', data=df, ax=ax)
     plt.xlabel('Sentiment')
     plt.ylabel('Count')
     plt.title('Sentiment Distribution')
     st.pyplot(fig)
+
+
+# Function to visualize sentiment distribution using pie chart
+def visualize_sentiment_distribution_pie(df):
+    fig1, ax1 = plt.subplots()
+    ax1.pie(df['Sentiment'].value_counts(), labels=df['Sentiment'].unique(), autopct='%1.1f%%', startangle=90)
+    ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+    plt.title('Sentiment Distribution (Pie Chart)')
+    st.pyplot(fig1)
+
+
+# Function to visualize sentiment distribution using horizontal bar chart
+def visualize_sentiment_distribution_horizontal_bar(df):
+    fig, ax = plt.subplots()
+    df['Sentiment'].value_counts().plot(kind='barh')
+    plt.xlabel('Count')
+    plt.ylabel('Sentiment')
+    plt.title('Sentiment Distribution (Horizontal Bar Chart)')
+    st.pyplot(fig)
+
+
+# Function to visualize sentiment distribution using heatmap
+def visualize_sentiment_distribution_heatmap(df):
+    heatmap_data = pd.crosstab(df['Rating'], df['Sentiment'])
+    plt.figure(figsize=(10, 6))
+    sns.heatmap(heatmap_data, annot=True, fmt='d', cmap="YlGnBu")
+    plt.title('Sentiment Distribution Heatmap')
+    plt.xlabel('Sentiment')
+    plt.ylabel('Rating')
+    st.pyplot()
+
+
 def main_app():
+    global review, original_review, sentiment
     st.title("EpicureGlow Sentiment Analysis 🍽️😋")
     st.markdown("---")
     # Call create_table() to ensure the table exists
@@ -100,55 +113,69 @@ def main_app():
     if st.session_state.user_authenticated:
         section = st.selectbox("Select Section:", ["Line Reviews", "Import Excel File"])
         if section == "Line Reviews":
-            # Use st.selectbox for selecting one-line or multi-line reviews
             review_type = st.selectbox("Select Review Type:", ["One-Line Reviews", "Multi-Line Reviews"])
 
-            # Add a textarea for user input based on the selected review type
             user_input = st.text_area(f"Enter {review_type.lower()} (each on a new line):")
-            show_instructions = st.checkbox("Show Instructions for Adding Reviews")
+            show_instructions = st.checkbox("Show Instructions for Adding Reviews using Line Review")
 
-            # Show instructions if checkbox is selected
             if show_instructions:
                 st.info("1. Be specific about your experience.\n"
                         "2. Mention key details like food quality, service, and ambiance.\n"
                         "3. Avoid using excessive capitalization or punctuation.")
 
-            # Perform sentiment analysis on user input
             if st.button("Predict Sentiments"):
-
                 if user_input:
                     st.success("Sentiment Analysis Result:")
-                    # Split reviews if multi-line tab is selected
                     reviews = user_input.split('\n') if review_type == "Multi-Line Reviews" else [user_input]
 
-                    # Process each review
                     results = {'Review': [], 'Sentiment': []}
                     for i, review in enumerate(reviews):
-                        # Preprocess input
                         original_review = review
-                        sentiment = 'Positive' if analyze_sentiment(review) == 1 else 'Negative'
+                        sentiment = 'Positive 😋' if analyze_sentiment(review) == 1 else 'Negative 💔'
 
-                        # Display result
-                        st.write(f"Review {i + 1}: {original_review}")
-                        st.write(
-                            f"Sentiment: {sentiment} :yum:" if sentiment == 'Positive' else f"Sentiment: {sentiment} :broken_heart:")
-
-                        # Save results for visualization
                         results['Review'].append(original_review)
                         results['Sentiment'].append(sentiment)
 
-                    # Visualize sentiment distribution
-                    col1, col2 = st.columns(2)
+                    # Convert results to DataFrame
+                    df_results = pd.DataFrame(results)
 
-                    with col1:
-                        with st.expander("Sentiment Distribution"):
-                            st.title("Sentiment Distribution")
-                            # Assuming visualize_sentiment_distribution is a function you've defined
-                            visualize_sentiment_distribution(pd.DataFrame(results))
-                    with col2:
-                        with st.expander("Sentiment Distribution (Bar Chart)"):
-                            st.title("Sentiment Distribution (Bar Chart)")
-                            visualize_sentiment_distribution_bar(pd.DataFrame(results))
+                    if review_type == "Multi-Line Reviews":
+                        # Display DataFrame
+                        st.write(df_results)
+
+                        positive_count = results['Sentiment'].count('Positive 😋')
+                        negative_count = results['Sentiment'].count('Negative 💔')
+                        total_reviews = len(results['Sentiment'])
+                        positive_percentage = (positive_count / total_reviews) * 100
+                        negative_percentage = (negative_count / total_reviews) * 100
+
+                        if positive_percentage >= 50:
+                            rain(emoji="😋", font_size=34, falling_speed=5, animation_length=1)
+                        else:
+                            rain(emoji="💔", font_size=34, falling_speed=5, animation_length=1)
+
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.write(f"Percentage of Positive Sentiment: {positive_percentage:.2f}%")
+                            with st.expander("Sentiment Distribution (Pie Chart)"):
+                                visualize_sentiment_distribution_pie(pd.DataFrame(results))
+                        with col2:
+                            st.write(f"Percentage of Negative Sentiment: {negative_percentage:.2f}%")
+                            with st.expander("Sentiment Distribution (Bar Chart)"):
+                                visualize_sentiment_distribution_bar(pd.DataFrame(results))
+                    else:
+                        if analyze_sentiment(review) == 0:
+                            st.write(f"Review: {original_review}")
+                            rain(emoji="💔", font_size=34, falling_speed=5, animation_length=1)
+                            st.write(f"Sentiment: {sentiment}", icon='💔')
+                        else:
+                            st.write(f"Review: {original_review}")
+                            rain(emoji="😋", font_size=34, falling_speed=5, animation_length=1)
+                            st.write(f"Sentiment: {sentiment}", icon='😋')
+
+
+
+
                 else:
                     st.warning("Please enter a review.")
         elif section == "Import Excel File":
@@ -156,58 +183,68 @@ def main_app():
             excel_file = st.file_uploader("Choose a file", type=["xlsx", "xls"])
             show_instructions = st.checkbox("Show Instructions for Adding Reviews using Excel Import")
 
-            # Show instructions if checkbox is selected
             if show_instructions:
-                st.info(
-                    "Adding Reviews using excel import \n1. Select 'Import Excel File' in the app.\n2. Upload an Excel file "
-                    "containing the 'Review' and 'Rating' columns.\n3. Ensure the Excel file structure has two columns named "
-                    "'Review' and 'Rating'.\n4. The app will process the reviews and provide sentiment predictions.")
+                st.info("Adding Reviews using excel import \n1. Select 'Import Excel File' in the app.\n2. Upload an "
+                        "Excel file containing the 'Review' and 'Rating' columns.\n3. Ensure the Excel file structure has two "
+                        "columns named 'Review' and 'Rating'.\n4. The app will process the reviews and provide sentiment predictions.")
 
-            # Process the loaded Excel file
             if excel_file is not None:
                 try:
-                    # Read the Excel file
                     df = pd.read_excel(excel_file)
-
-                    # Display the loaded data
                     st.write("Loaded Data:")
                     st.dataframe(df)
 
-                    # Process reviews from the loaded data
                     st.success("Sentiment Analysis Result:")
-                    results = {'Review': [], 'Sentiment': []}
+                    results = {'Review': [], 'Rating': [], 'Sentiment': []}
                     for i, row in df.iterrows():
                         review = row['Review'] if 'Review' in row else ''
                         rating = row['Rating'] if 'Rating' in row else 0
 
-                        # Perform sentiment analysis based on rating
-                        if rating >= 4:
-                            sentiment = 'Positive'
-                        else:
-                            sentiment = 'Negative'
+                        sentiment = 'Positive 😋' if rating >= 4 else 'Negative 💔'
 
-                        # Display result
-                        st.write(f"Review {i + 1}: {review}")
-                        st.write(
-                            f"Sentiment: {sentiment} :yum: | Rating: {rating}/5" if sentiment == 'Positive' else f"Sentiment: {sentiment} :broken_heart: | Rating: {rating}/5")
-
-                        # Save results for visualization
                         results['Review'].append(review)
+                        results['Rating'].append(rating)
                         results['Sentiment'].append(sentiment)
 
-                    # Create three columns for visualizations
-                    col1, col2, col3 = st.columns(3)
+                    df_results = pd.DataFrame(results)
+                    st.write(df_results)
 
-                    # Visualize rating distribution in the first column
+                    positive_count_excel = df_results['Sentiment'].value_counts().get('Positive 😋', 0)
+                    negative_count_excel = df_results['Sentiment'].value_counts().get('Negative 💔', 0)
+                    total_reviews_excel = len(df_results)
+                    positive_percentage_excel = (positive_count_excel / total_reviews_excel) * 100
+                    negative_percentage_excel = (negative_count_excel / total_reviews_excel) * 100
+
+                    if positive_percentage_excel >= 50:
+                        rain(emoji="😋", font_size=34, falling_speed=5, animation_length=1)
+                    else:
+                        rain(emoji="💔", font_size=34, falling_speed=5, animation_length=1)
+
+                    col1, col2 = st.columns(2)
+
                     with col1:
+                        st.write(f"Percentage of Positive Sentiment (Excel): {positive_percentage_excel:.2f}%")
                         with st.expander("Rating Distribution"):
                             visualize_rating_distribution(df)
+
                     with col2:
-                        with st.expander("Sentiment Distribution"):
-                            visualize_sentiment_distribution(pd.DataFrame(results))
-                    with col3:
+                        st.write(f"Percentage of Negative Sentiment (Excel): {negative_percentage_excel:.2f}%")
                         with st.expander("Sentiment Distribution (Bar Chart)"):
                             visualize_sentiment_distribution_bar(pd.DataFrame(results))
+
+                    col1, col2 = st.columns(2)
+
+                    with col1:
+                        with st.expander("Sentiment Distribution (Pie Chart)"):
+                            visualize_sentiment_distribution_pie(pd.DataFrame(results))
+
+                    with col2:
+                        with st.expander("Sentiment Distribution (Horizontal Bar Chart)"):
+                            visualize_sentiment_distribution_horizontal_bar(pd.DataFrame(results))
+
+                    with st.expander("Sentiment Distribution (Heatmap)"):
+                        visualize_sentiment_distribution_heatmap(pd.DataFrame(results))
+
 
                 except Exception as e:
                     st.error(f"Error: {e}")
