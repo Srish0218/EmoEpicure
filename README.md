@@ -2,6 +2,8 @@
 
 EpicureGlow Sentiment Analysis is a Streamlit-based web application designed for restaurant owners to analyze and visualize customer sentiments based on reviews. The application employs Natural Language Processing (NLP) techniques to determine sentiments and provides insightful visualizations.
 
+> This project works great on local host but faces issues while deploying using streamlit cloud. You can either use Heroku or any other cloud service (Azure/Aws) to deploy or use Flask Frame work and deploy using Github Pages or any service.
+> There is one more way of doing so, you can use Html css javascript react or any other Web Development Technology and deploy using any service ( Keep one think in mind if using Web Technology use javascript instead of python.)
 ## Overview
 
 This project comprises a Streamlit-based web application, consisting of authentication functionality for restaurant owners, sentiment analysis, and visualization of customer reviews. The sentiment analysis is powered by a Bag of Words model and a classifier trained on customer reviews.
