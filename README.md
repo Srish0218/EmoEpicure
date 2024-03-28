@@ -22,8 +22,7 @@ To run the EpicureGlow Sentiment Analysis application, follow these steps:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/Srish0218/EpicureGlowSentiment.git
-cd DineVibe-Sentiment-Analysis
+git clone https://github.com/Srish0218/EmoEpicure.git
 ```
 
 ### 2. Create and Activate Virtual Environment
